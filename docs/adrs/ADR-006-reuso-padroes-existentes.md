@@ -21,9 +21,9 @@ Mapeamento de Reuso de Padrões da Codebase:
    * `webhooks.repository.ts` (comunicação com banco)
    * `webhooks.routes.ts` (mapeamento de rotas)
    * `webhooks.schema.ts` (schemas de validação do Zod)
-2. **Controle de Erros (`AppError`):** Utilizaremos a classe global `AppError` para todas as exceções de negócio lançadas pelo módulo de webhooks, criando códigos de erro padronizados usando obrigatoriamente o prefixo `WEBHOOK_` (ex: `WEBHOOK_NOT_FOUND`, `WEBHOOK_INVALID_URL`). O middleware global de erro de `src/middlewares/errorHandler.ts` já está preparado para capturar `AppError` e continuará funcionando perfeitamente sem alterações.
-3. **Logs Estruturados (Logger Pino):** Utilizaremos a mesma instância configurada do Pino Logger para todas as operações do worker e disparo dos webhooks, permitindo agregação simples de logs.
-4. **Segurança de Rotas (`requireRole`):** O middleware existente `requireRole` será reaproveitado para blindar a rota de replay manual de DLQ administrativa, exigindo o papel `ADMIN`.
+2. **Controle de Erros (`AppError`):** Utilizaremos a classe global `AppError` para todas as exceções de negócio lançadas pelo módulo de webhooks, criando códigos de erro padronizados usando obrigatoriamente o prefixo `WEBHOOK_` (ex: `WEBHOOK_NOT_FOUND`, `WEBHOOK_INVALID_URL`). O middleware global de erro em `src/middlewares/error.middleware.ts` já está preparado para capturar `AppError` e continuará funcionando perfeitamente sem alterações.
+3. **Logs Estruturados (Logger Pino em `src/shared/logger/index.ts`):** Utilizaremos a mesma instância configurada do Pino Logger para todas as operações do worker e disparo dos webhooks, permitindo agregação simples de logs em formato JSON.
+4. **Segurança de Rotas (`src/middlewares/auth.middleware.ts`):** O middleware existente em `src/middlewares/auth.middleware.ts` será reaproveitado para blindar a rota de replay manual de DLQ administrativa, exigindo o papel `ADMIN`.
 5. **Autenticação e Schemas:** Todas as validações de payloads de entrada das APIs do CRUD utilizarão schemas Zod integrados com nossos pipelines de rotas padrão.
 
 ### Alternativas Consideradas
