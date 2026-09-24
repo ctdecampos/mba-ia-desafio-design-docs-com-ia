@@ -74,7 +74,7 @@ Este documento detalha o desenho técnico de baixo nível para a implementação
   "customer_id": "893c5240-62e5-4d04-897d-411a78dc124e",
   "url": "https://api.atlascomercial.com/webhooks/orders",
   "events": ["PAID", "SHIPPED", "DELIVERED"],
-  "secret": "whsec_b89d81d2f6027fe09322e7d7041a9cb9eb9d59e3bc839d436a5c1f513903ee41",
+  "secret": "xxxx",
   "active": true,
   "created_at": "2026-08-20T16:19:00.000Z"
 }
