@@ -23,10 +23,10 @@ Este documento realiza o mapeamento cruzado entre cada requisito, decisão técn
 | **RFC-QA-01** | `docs/RFC.md` | Questão em Aberto | Throttling e Rate Limiting de Saída para clientes. | `TRANSCRICAO` | `[09:38] Diego` |
 | **RFC-QA-02** | `docs/RFC.md` | Questão em Aberto | Dashboard visual / Interface de gerenciamento no frontend. | `TRANSCRICAO` | `[09:39] Marcos` |
 | **FDD-INT-01** | `docs/FDD.md` | Integração | Inserção transacional no `OrderService.changeStatus` usando Prisma transactional client. | `CODIGO` | `src/modules/orders/order.service.ts` |
-| **FDD-INT-02** | `docs/FDD.md` | Integração | Uso de classes herdadas de `AppError` com prefixo `WEBHOOK_`. | `CODIGO` | `src/modules/errors/AppError.ts` |
-| **FDD-INT-03** | `docs/FDD.md` | Integração | Restrição de replay ao papel de administrador (`requireRole('ADMIN')`). | `CODIGO` | `src/middlewares/auth.middleware.ts` |
-| **FDD-INT-04** | `docs/FDD.md` | Integração | Captura automática de erros do tipo `AppError` no middleware centralizado. | `CODIGO` | `src/middlewares/error.middleware.ts` |
-| **FDD-INT-05** | `docs/FDD.md` | Integração | Registro de logs estruturados de processamento com o Pino Logger. | `CODIGO` | `src/shared/logger/index.ts` |
+| **FDD-INT-02** | `docs/FDD.md` | Integração | Uso da classe base de erros `AppError` com prefixo `WEBHOOK_`. | `CODIGO` | `src/shared/errors/app-error.ts` |
+| **FDD-INT-03** | `docs/FDD.md` | Integração | Restrição de replay ao papel de administrador (`auth.middleware.ts`). | `CODIGO` | `src/middlewares/auth.middleware.ts` |
+| **FDD-INT-04** | `docs/FDD.md` | Integração | Captura automática de erros do tipo `AppError` no middleware centralizado (`error.middleware.ts`). | `CODIGO` | `src/middlewares/error.middleware.ts` |
+| **FDD-INT-05** | `docs/FDD.md` | Integração | Registro de logs estruturados de processamento com o Pino Logger (`src/shared/logger/index.ts`). | `CODIGO` | `src/shared/logger/index.ts` |
 | **ADR-001** | `docs/adrs/ADR-001-padrao-outbox-mysql.md` | Decisão | Uso do Padrão Outbox no MySQL. | `TRANSCRICAO` | `[09:06] Diego` |
 | **ADR-002** | `docs/adrs/ADR-002-politica-retry-backoff-dlq.md` | Decisão | Política de retry com backoff exponencial (5 tentativas) e DLQ. | `TRANSCRICAO` | `[09:14] Diego` |
 | **ADR-003** | `docs/adrs/ADR-003-autenticacao-hmac-sha256.md` | Decisão | Assinatura HMAC-SHA256 e secret única rotacionável por endpoint. | `TRANSCRICAO` | `[09:19] Sofia` |

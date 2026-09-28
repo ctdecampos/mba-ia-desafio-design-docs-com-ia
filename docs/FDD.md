@@ -9,7 +9,7 @@ Este documento detalha o desenho técnico de baixo nível para a implementação
 
 ### 2. Objetivos Técnicos
 * Implementar o padrão transacional Outbox no banco de dados MySQL atual.
-* Garantir isolamento de execução criando um processo de worker desacoplado.
+* Garantir isolamento de execução criando um processo de worker desacoplado (`src/worker.ts`).
 * Definir contratos de API claros e robustos para gerenciamento dos webhooks.
 
 ### 3. Escopo e Exclusões
@@ -58,7 +58,10 @@ Este documento detalha o desenho técnico de baixo nível para a implementação
 
 #### Endpoint 1: Cadastro de Webhook
 * **Rota:** `POST /webhooks`
-* **Autenticação:** JWT do Operador (o `customer_id` deve ser informado no corpo da requisição)
+* **Autenticação:** JWT do Operador
+* **Request Headers:**
+  * `Authorization: Bearer <token_jwt>`
+  * `Content-Type: application/json`
 * **Request Payload (JSON):**
 ```json
 {
@@ -83,6 +86,8 @@ Este documento detalha o desenho técnico de baixo nível para a implementação
 #### Endpoint 2: Listagem de Webhooks de um Customer
 * **Rota:** `GET /webhooks?customer_id=893c5240-62e5-4d04-897d-411a78dc124e`
 * **Autenticação:** JWT Autenticado
+* **Request Headers:**
+  * `Authorization: Bearer <token_jwt>`
 * **Response (HTTP 200 OK):**
 ```json
 [
@@ -100,6 +105,8 @@ Este documento detalha o desenho técnico de baixo nível para a implementação
 #### Endpoint 3: Histórico de Entregas por Webhook
 * **Rota:** `GET /webhooks/:id/deliveries`
 * **Autenticação:** JWT Autenticado
+* **Request Headers:**
+  * `Authorization: Bearer <token_jwt>`
 * **Response (HTTP 200 OK):**
 ```json
 [
@@ -109,7 +116,7 @@ Este documento detalha o desenho técnico de baixo nível para a implementação
     "event_id": "55c2f38d-0da4-44b2-a42e-be25da8934df",
     "event_type": "order.status_changed",
     "status_code": 200,
-    "response_body": "{"received": true}",
+    "response_body": "{\"received\": true}",
     "execution_time_ms": 124,
     "success": true,
     "attempt_number": 1,
@@ -121,6 +128,9 @@ Este documento detalha o desenho técnico de baixo nível para a implementação
 #### Endpoint 4: Replay Manual da DLQ (Admin)
 * **Rota:** `POST /admin/webhooks/dead-letter/:id/replay`
 * **Autenticação:** JWT Obrigatório, Role `ADMIN` (via `src/middlewares/auth.middleware.ts`)
+* **Request Headers:**
+  * `Authorization: Bearer <token_jwt_admin>`
+  * `Content-Type: application/json`
 * **Response (HTTP 200 OK):**
 ```json
 {
@@ -131,11 +141,18 @@ Este documento detalha o desenho técnico de baixo nível para a implementação
 }
 ```
 
+#### Cabeçalhos HTTP Enviados pelo Worker nos Disparos de Webhook:
+* `Content-Type: application/json`
+* `X-Signature: t=1787156462,v1=9f8a7b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a`
+* `X-Event-Id: 55c2f38d-0da4-44b2-a42e-be25da8934df`
+* `X-Timestamp: 2026-08-20T16:21:02.000Z`
+* `X-Webhook-Id: 11ea15a9-34ba-46e3-a61b-9f4a6efc17bb`
+
 ---
 
 ### 6. Matriz de Erros Previstos
 
-O módulo de webhooks deve lançar exceções mapeadas no padrão de erros do projeto (`AppError`), utilizando o prefixo `WEBHOOK_` e o código HTTP apropriado:
+O módulo de webhooks deve lançar exceções mapeadas no padrão de erros do projeto (`AppError` em `src/shared/errors/app-error.ts`), utilizando o prefixo `WEBHOOK_` e o código HTTP apropriado:
 
 | Código de Erro | Status HTTP | Mensagem | Causa |
 | --- | --- | --- | --- |
@@ -187,15 +204,15 @@ O módulo de webhooks se integra perfeitamente com os seguintes caminhos físico
      await publishWebhookEvent(tx, orderId, fromStatus, toStatus);
    });
    ```
-2. **`src/modules/errors/AppError.ts`:**
-   Utilizado para lançar exceções estruturadas. Reutilizaremos as classes herdadas de `AppError` para padronizar nossos retornos HTTP e códigos de erro com prefixo `WEBHOOK_`.
+2. **`src/shared/errors/app-error.ts`:**
+   A classe base `AppError` será reutilizada para todas as exceções de negócio lançadas pelo módulo de webhooks, garantindo a padronização dos códigos de erro com o prefixo `WEBHOOK_`.
 3. **`src/middlewares/auth.middleware.ts`:**
-   O middleware de autenticação e autorização (`auth.middleware.ts`) será acoplado diretamente à rota de replay de mensagens mortas na DLQ para restringir o acesso unicamente a usuários administradores com a permissão/role necessária:
+   O middleware de autenticação e autorização em `src/middlewares/auth.middleware.ts` será acoplado diretamente à rota de replay de mensagens mortas na DLQ para restringir o acesso unicamente a usuários administradores com o papel `ADMIN`:
    ```typescript
    router.post('/admin/webhooks/dead-letter/:id/replay', authMiddleware, requireRole('ADMIN'), webhookController.replay);
    ```
 4. **`src/middlewares/error.middleware.ts`:**
-   O middleware de tratamento de exceções global da aplicação (`error.middleware.ts`) capturará de forma automática erros do tipo `AppError` gerados pelo módulo de webhooks e também erros de validação do Zod, injetando segurança e respostas estruturadas.
+   O middleware de tratamento de exceções global da aplicação (`src/middlewares/error.middleware.ts`) capturará de forma automática erros do tipo `AppError` gerados pelo módulo de webhooks e também erros de validação do Zod, injetando segurança e respostas estruturadas.
 5. **`src/shared/logger/index.ts`:**
    A instância existente do logger Pino em `src/shared/logger/index.ts` será importada no `src/worker.ts` e nos controladores para capturar todos os estágios de processamento dos eventos da outbox de forma estruturada em JSON.
 
@@ -223,7 +240,7 @@ O módulo de webhooks se integra perfeitamente com os seguintes caminhos físico
 * **AC-TEC-04 (Resiliência de Retry e DLQ):** Falhas de envio HTTP (não-2xx ou timeout > 10s) devem passar por até 5 retentativas com backoff exponencial (1m, 5m, 30m, 2h, 12h). Após a 5ª tentativa mal-sucedida, o evento deve ser movido para a tabela `webhook_dead_letter` e removido da outbox.
 * **AC-TEC-05 (Isolamento do Worker):** O Worker (`src/worker.ts`) deve executar em um processo isolado da API REST principal com polling ajustável de 2 segundos.
 * **AC-TEC-06 (Replay Administrativo Autorizado):** O endpoint `POST /admin/webhooks/dead-letter/:id/replay` deve ser protegido pelo middleware `src/middlewares/auth.middleware.ts` exigindo o papel `ADMIN`, registrando o ID do operador no histórico e re-enfileirando o evento na outbox.
-* **AC-TEC-07 (Integração e Padronização de Erros/Logs):** Erros de validação e de negócio no módulo de webhooks devem utilizar a classe `AppError` com o prefixo `WEBHOOK_`, sendo tratados centralizadamente em `src/middlewares/error.middleware.ts`. Todos os logs estruturados devem utilizar a instância em `src/shared/logger/index.ts`.
+* **AC-TEC-07 (Integração e Padronização de Erros/Logs):** Erros de validação e de negócio no módulo de webhooks devem utilizar a classe `AppError` em `src/shared/errors/app-error.ts` com o prefixo `WEBHOOK_`, sendo tratados centralizadamente em `src/middlewares/error.middleware.ts`. Todos os logs estruturados devem utilizar a instância em `src/shared/logger/index.ts`.
 
 ---
 
