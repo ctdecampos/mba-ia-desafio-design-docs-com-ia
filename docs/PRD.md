@@ -84,10 +84,10 @@ O **Sistema de Webhooks de Notificação de Pedidos** é uma nova feature voltad
 * **Prisma ORM:** Para controle transacional e consultas ao banco.
 
 ### 10. Riscos e Mitigação
-* **Risco 1: Endpoints de Clientes Lentos/Instáveis:** Clientes que demoram para responder podem prender conexões do worker.
-  * *Mitigação:* Timeout rígido de 10 segundos por chamada e isolamento do worker em processo separado com pool próprio de conexões Prisma.
-* **Risco 2: Vazamento de Secrets de Clientes:** Secrets expostas em logs dos clientes podem comprometer a autenticidade das mensagens.
-  * *Mitigação:* Secrets únicas por endpoint (nunca globais) e capacidade de rotação com grace period de 24 horas para migração suave.
+| ID | Risco Identificado | Probabilidade | Impacto | Estratégia de Mitigação |
+| --- | --- | --- | --- | --- |
+| **R-01** | **Endpoints de Clientes Lentos/Instáveis:** Clientes que demoram para responder podem prender conexões do worker. | Alta | Alto | Timeout rígido de 10 segundos por chamada e isolamento do worker em processo separado com pool próprio de conexões Prisma. |
+| **R-02** | **Vazamento de Secrets de Clientes:** Secrets expostas em logs dos clientes podem comprometer a autenticidade das mensagens. | Média | Alto | Secrets únicas por endpoint (nunca globais) e capacidade de rotação com grace period de 24 horas para migração suave. |
 
 ### 11. Critérios de Aceitação
 * Qualquer transação de mudança de status de pedido (`changeStatus`) deve sofrer rollback completo se a inserção correspondente na tabela de outbox falhar.
